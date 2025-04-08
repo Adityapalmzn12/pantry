@@ -1,0 +1,9 @@
+{
+  "@@locale": "en",
+  "appName": "My Flutter App",
+  "navAnchored": "Anchored",
+  "navItems": "Items",
+  "navNotes": "Notes",
+  "navTemplate": "Template",
+  "navEndModule": "End Module"
+}
