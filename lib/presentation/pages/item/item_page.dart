@@ -1,177 +1,251 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../data/model/item.dart';
+import 'package:intl/intl.dart';
+import '../../../data/model/item/folder_model.dart';
+import '../../../data/model/item/item.dart';
 import '../../bloc/item/item_bloc.dart';
 import '../../bloc/item/item_event.dart';
 import '../../bloc/item/item_state.dart';
-import '../../bloc/language/language_bloc.dart';
-import '../../bloc/language/language_event.dart';
-import '../../bloc/theme/theme_bloc.dart';
+import 'add_item_screen.dart';
 
+class ItemsPage extends StatefulWidget {
+  const ItemsPage({super.key});
 
-class ItemPage extends StatelessWidget {
-  const ItemPage({super.key});
+  @override
+  State<ItemsPage> createState() => _ItemsPageState();
+}
+
+class _ItemsPageState extends State<ItemsPage> {
+  String? selectedFolderId;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Items'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.language),
-            onPressed: () {
-              _showLanguageDialog(context);
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.brightness_6),
-            onPressed: () {
-              context.read<ThemeBloc>().add(ToggleTheme());
-            },
-          ),
-        ],
+        backgroundColor: Colors.black,
+        title: const Text(
+          'Items',
+          style: TextStyle(color: Colors.white),
+        ),
+        centerTitle: true,
+        elevation: 0,
       ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: BlocBuilder<ItemBloc, ItemState>(
+          builder: (context, state) {
+            if (state is ItemLoading) {
+              return const Center(child: CircularProgressIndicator(color: Colors.amber));
+            }
 
-      body: BlocBuilder<ItemBloc, ItemState>(
-        builder: (context, state) {
-          if (state.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (state.items.isEmpty) {
-            return const Center(child: Text('No items found.'));
-          }
-
-          return ListView.builder(
-            itemCount: state.items.length,
-            itemBuilder: (context, index) {
-              final item = state.items[index];
-              return ListTile(
-                leading: item.image != null
-                    ? Image.network(item.image!, width: 40, height: 40, fit: BoxFit.cover)
-                    : const Icon(Icons.folder),
-                title: Text(item.name),
-                subtitle: Text(item.isFolder
-                    ? 'Folder'
-                    : 'Quantity: ${item.quantity ?? 0}'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () {
-                        _showItemDialog(context, isEdit: true, item: item);
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () {
-                        context.read<ItemBloc>().add(DeleteItem(item.id));
-                      },
-                    ),
-                  ],
+            if (state is ItemError) {
+              return Center(
+                child: Text(
+                  'Error: ${state.message}',
+                  style: const TextStyle(color: Colors.redAccent),
                 ),
               );
-            },
+            }
+
+            if (state is ItemLoaded) {
+              // Ensure there are no duplicates in folders
+              final folders = _removeDuplicateFolders(state.folders);
+              final items = state.items;
+
+              // Filter items based on selected folder
+              final filteredItems = selectedFolderId == null
+                  ? items
+                  : items.where((item) => item.folderId == selectedFolderId).toList();
+
+              return Column(
+                children: [
+                  // Folders Grid
+                  if (folders.isNotEmpty) ...[
+                    SizedBox(
+                      height: 180,
+                      child: GridView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                        ),
+                        itemCount: folders.length,
+                        itemBuilder: (context, index) {
+                          final folder = folders[index];
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedFolderId = folder.id;
+                              });
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: _hexToColor(folder.colorHex),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  folder.name,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Items List
+                  if (filteredItems.isNotEmpty)
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: filteredItems.length,
+                        itemBuilder: (context, index) {
+                          final item = filteredItems[index];
+                          return GestureDetector(
+                            onTap: (){
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AddItemScreen(
+                                    existingItem: item, // Pass the selected item
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Card(
+                              color: Colors.grey.shade900,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              margin: const EdgeInsets.only(bottom: 12),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.calendar_today_outlined, size: 16, color: Colors.grey),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          item.createdAt != null
+                                              ? DateFormat('dd-MM-yyyy').format(item.createdAt!)
+                                              : 'dd-mm-yyyy',
+                                          style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      item.name,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        // Decrease Button
+                                        IconButton(
+                                          icon: const Icon(Icons.remove, color: Colors.white),
+                                          onPressed: () {
+                                            if (item.quantity > 0) {
+                                              context.read<ItemBloc>().add(
+                                                UpdateItemQuantityEvent(
+                                                  itemId: item.id,
+                                                  change: -1, // Decrease by 1
+                                                ),
+                                              );
+                                            }
+                                          },
+                                        ),
+                                        Text(
+                                          '${item.quantity}',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                        // Increase Button
+                                        IconButton(
+                                          icon: const Icon(Icons.add, color: Colors.white),
+                                          onPressed: () {
+                                            context.read<ItemBloc>().add(
+                                              UpdateItemQuantityEvent(
+                                                itemId: item.id,
+                                                change: 1, // Increase by 1
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+
+                  // If no items and no folders
+                  if (folders.isEmpty && items.isEmpty)
+                    const Center(
+                      child: Text(
+                        'No items or folders found.',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                ],
+              );
+            }
+
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+
+      // Floating action button to add new item
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.amber,
+        child: const Icon(Icons.add, color: Colors.black),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AddItemScreen()),
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showItemDialog(context);
-        },
-        child: const Icon(Icons.add),
-      ),
     );
   }
-  void _showLanguageDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Choose Language'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                context.read<LanguageBloc>().add(const ToggleLanguageEvent(Locale('en')));
-                Navigator.of(dialogContext).pop();
-              },
-              child: const Text('English'),
-            ),
-            TextButton(
-              onPressed: () {
-                context.read<LanguageBloc>().add(const ToggleLanguageEvent(Locale('hi')));
-                Navigator.of(dialogContext).pop();
-              },
-              child: const Text('Hindi'),
-            ),
-          ],
-        );
-      },
-    );
+
+  // Helper method to convert hex color string to Color
+  Color _hexToColor(String hex) {
+    try {
+      hex = hex.replaceAll('#', '');
+      if (hex.length == 6) hex = 'FF$hex'; // add alpha if not provided
+      return Color(int.parse(hex, radix: 16));
+    } catch (_) {
+      return Colors.grey; // fallback color
+    }
   }
-  void _showItemDialog(BuildContext context, {bool isEdit = false, ItemModel? item}) {
-    final nameController = TextEditingController(text: item?.name ?? '');
-    final quantityController = TextEditingController(
-      text: item?.quantity?.toString() ?? '',
-    );
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(isEdit ? 'Edit Item' : 'Add Item'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
-              ),
-              TextField(
-                controller: quantityController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Quantity (optional)'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final name = nameController.text.trim();
-                final quantityText = quantityController.text.trim();
-                final quantity = quantityText.isNotEmpty ? int.tryParse(quantityText) : null;
-
-                if (name.isEmpty) return;
-
-                final newItem = ItemModel(
-                  id: isEdit ? item!.id : DateTime.now().millisecondsSinceEpoch.toString(),
-                  name: name,
-                  image: null,
-                  quantity: quantity,
-                  parentId: null,
-                  isFolder: false,
-                  createdAt: DateTime.now(),
-                );
-
-                if (isEdit) {
-                  context.read<ItemBloc>().add(EditItem(newItem));
-                } else {
-                  context.read<ItemBloc>().add(AddItem(newItem));
-                }
-
-                Navigator.pop(context);
-              },
-              child: Text(isEdit ? 'Save' : 'Add'),
-            ),
-          ],
-        );
-      },
-    );
+  // Function to remove duplicate folders
+  List<FolderModel> _removeDuplicateFolders(List<FolderModel> folders) {
+    return folders.toSet().toList(); // Use Set to remove duplicates based on equality
   }
 }
+

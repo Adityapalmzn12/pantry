@@ -1,25 +1,43 @@
-import '../../../data/model/item.dart';
+// item_event.dart
 
+import '../../../data/model/item/folder_model.dart';
+import '../../../data/model/item/item.dart';
 
 abstract class ItemEvent {}
 
-class LoadItems extends ItemEvent {}
+class LoadFoldersAndItemsEvent extends ItemEvent {}
 
-class AddItem extends ItemEvent {
-  final ItemModel item;
+class AddFolderEvent extends ItemEvent {
+  final FolderModel folder;
 
-  AddItem(this.item);
+  AddFolderEvent(this.folder);
 }
 
-class EditItem extends ItemEvent {
+class AddItemEvent extends ItemEvent {
   final ItemModel item;
 
-  EditItem(this.item);
+  AddItemEvent(this.item);
 }
 
-class DeleteItem extends ItemEvent {
-  final String id;
+class UpdateItemEvent extends ItemEvent {
+  final ItemModel item;
 
-  DeleteItem(this.id);
+  UpdateItemEvent(this.item);
+}
+
+class UpdateItemQuantityEvent extends ItemEvent {
+  final String itemId;
+  final int change;
+
+  UpdateItemQuantityEvent({
+    required this.itemId,
+    required this.change,
+  });
+}
+
+class DeleteItemEvent extends ItemEvent {
+  final String itemId;
+
+  DeleteItemEvent(this.itemId);
 }
 

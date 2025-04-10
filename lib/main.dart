@@ -42,7 +42,7 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => AnchoredBloc(AnchoredRepository())..add(LoadAnchoredItems())),
 
         // Item Module Bloc
-        BlocProvider(create: (_) => ItemBloc(ItemRepository())..add(LoadItems())),
+        BlocProvider(create: (_) => ItemBloc(ItemRepository())..add(LoadFoldersAndItemsEvent())),
 
         // Notes Module Bloc
         BlocProvider(create: (_) => NotesBloc(NotesRepository())..add(LoadNotes())),
@@ -72,7 +72,7 @@ class MyApp extends StatelessWidget {
               Locale('hi'),
             ],
             locale: const Locale('en'),
-            home: const HomePage(),
+            home:  HomePage(),
           );
         },
       ),

@@ -1,17 +1,24 @@
-import '../../../data/model/item.dart';
+import '../../../data/model/item/folder_model.dart';
+import '../../../data/model/item/item.dart';
 
-class ItemState {
+abstract class ItemState {}
+
+class ItemInitial extends ItemState {}
+
+class ItemLoading extends ItemState {}
+
+class ItemLoaded extends ItemState {
+  final List<FolderModel> folders;
   final List<ItemModel> items;
-  final bool isLoading;
 
-  ItemState({required this.items, required this.isLoading});
+  ItemLoaded({
+    required this.folders,
+    required this.items,
+  });
+}
 
-  factory ItemState.initial() => ItemState(items: [], isLoading: true);
+class ItemError extends ItemState {
+  final String message;
 
-  ItemState copyWith({List<ItemModel>? items, bool? isLoading}) {
-    return ItemState(
-      items: items ?? this.items,
-      isLoading: isLoading ?? this.isLoading,
-    );
-  }
+  ItemError(this.message);
 }

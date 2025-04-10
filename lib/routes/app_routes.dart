@@ -16,7 +16,7 @@ class AppRoutes {
   static Map<String, WidgetBuilder> routes = {
     anchored: (context) => const AnchoredPage(),
     endModule: (context) => const EndModulePage(),
-    item: (context) => const ItemPage(),
+    item: (context) => const ItemsPage(),
     notes: (context) => const NotesPage(),
     templateModule: (context) => const TemplateModulePage(),
   };

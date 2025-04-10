@@ -14,10 +14,10 @@ import '../notes/notes_page.dart';
 import '../template_module/template_module_page.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+   HomePage({super.key});
 
   final List<Widget> pages = const [
-    ItemPage(),
+    ItemsPage(),
     TemplateModulePage(),
     EndModulePage(),
     AnchoredPage(),
@@ -43,23 +43,9 @@ class HomePage extends StatelessWidget {
               BottomNavigationBarItem(
                 icon: Padding(
                   padding: EdgeInsets.only(bottom: 4),
-                  child: Icon(Icons.home, size: 18),
-                ),
-                label: AppStrings.navAnchored,
-              ),
-              BottomNavigationBarItem(
-                icon: Padding(
-                  padding: EdgeInsets.only(bottom: 4),
                   child: Icon(Icons.inventory, size: 18),
                 ),
                 label: AppStrings.navItems,
-              ),
-              BottomNavigationBarItem(
-                icon: Padding(
-                  padding: EdgeInsets.only(bottom: 4),
-                  child: Icon(Icons.note, size: 18),
-                ),
-                label: AppStrings.navNotes,
               ),
               BottomNavigationBarItem(
                 icon: Padding(
@@ -75,6 +61,23 @@ class HomePage extends StatelessWidget {
                 ),
                 label: AppStrings.navEndModule,
               ),
+              BottomNavigationBarItem(
+                icon: Padding(
+                  padding: EdgeInsets.only(bottom: 4),
+                  child: Icon(Icons.home, size: 18),
+                ),
+                label: AppStrings.navAnchored,
+              ),
+
+              BottomNavigationBarItem(
+                icon: Padding(
+                  padding: EdgeInsets.only(bottom: 4),
+                  child: Icon(Icons.note, size: 18),
+                ),
+                label: AppStrings.navNotes,
+              ),
+
+
             ],
             selectedLabelStyle: const TextStyle(fontSize: 10),
             unselectedLabelStyle: const TextStyle(fontSize: 10),
